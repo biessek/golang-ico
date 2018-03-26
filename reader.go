@@ -11,7 +11,6 @@ import (
 	"io"
 
 	bmp "github.com/jsummers/gobmp"
-	"log"
 )
 
 func init() {
@@ -117,7 +116,6 @@ func (d *decoder) decode(r io.Reader) (err error) {
 				return err
 			}
 			bounds := d.images[i].Bounds()
-			log.Printf("bounds %v\n", bounds)
 			mask := image.NewAlpha(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
 			masked := image.NewNRGBA(image.Rect(0, 0, bounds.Dx(), bounds.Dy()))
 			for row := 0; row < int(e.Height); row++ {
