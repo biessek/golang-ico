@@ -88,6 +88,12 @@ type decoder struct {
 }
 
 func (d *decoder) decode(r io.Reader) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("decode panic recovered: %v", r)
+		}
+	}()
+	
 	if err = d.decodeHeader(r); err != nil {
 		return err
 	}
@@ -95,6 +101,7 @@ func (d *decoder) decode(r io.Reader) (err error) {
 		return err
 	}
 	d.images = make([]image.Image, d.head.Number)
+	
 	for i := range d.entries {
 		e := &(d.entries[i])
 		data := make([]byte, e.Size+14)
@@ -128,7 +135,12 @@ func (d *decoder) decode(r io.Reader) (err error) {
 					} else { // 32-Bit
 						rowSize := (int(e.Width)*32 + 31) / 32 * 4
 						offset := int(binary.LittleEndian.Uint32(data[10:14]))
-						mask.SetAlpha(col, int(e.Height)-row-1, color.Alpha{data[offset+row*rowSize+col*4+3]})
+						alphaIndex := offset + row*rowSize + col*4 + 3
+						if alphaIndex >= 0 && alphaIndex < len(data) {
+							mask.SetAlpha(col, int(e.Height)-row-1, color.Alpha{data[alphaIndex]})
+						} else {
+							mask.SetAlpha(col, int(e.Height)-row-1, color.Alpha{255})
+						}
 					}
 				}
 			}
